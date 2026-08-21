@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class IntersectionCleanerTest {
 
     @Nested
-    public class Casing {
+    class Casing {
         @Test
         void idIsUppercased() {
             assertEquals("INT-1002", IntersectionCleaner.cleanId("int-1002"));
@@ -39,7 +39,7 @@ public class IntersectionCleanerTest {
     }
 
     @Nested
-    public class PaddingAndWhiteSpaces {
+    class PaddingAndWhiteSpaces {
 
         @Test
         void leadingAndTrailingSpacesAreTrimmed() {
@@ -57,7 +57,7 @@ public class IntersectionCleanerTest {
     }
 
     @Nested
-    public class MissingValues {
+    class MissingValues {
 
         @ParameterizedTest  // to run the same test with multiple inputs
         @ValueSource(strings = {"", " ", "N/A", "n/a", "TBD", "tbd", "unknown", "UNKNOWN", "-", "NaN"})
@@ -85,7 +85,7 @@ public class IntersectionCleanerTest {
     }
 
     @Nested
-    public class BooleanNormalization {
+    class BooleanNormalization {
 
         @ParameterizedTest
         @ValueSource(strings = {"Y", "y", "yes", "YES", "true", "TRUE", "1"})
@@ -190,4 +190,3 @@ public class IntersectionCleanerTest {
 
 
 
-}
