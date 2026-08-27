@@ -99,6 +99,111 @@ public class IntersectionCleaner {
         return new Intersection(id, cleanDistrict(row[1]), cleanSignalType(row[2]), cleanActiveFlag(row[3]));
     }
 
+    // --- field cleaning methods ---
+    static String cleanId(String raw){
+        if (raw == null){
+            return "";
+        } else {
+            return raw.trim().toUpperCase(Locale.ROOT);
+        }
+    }
+
+    static String cleanDistrict(String raw){
+        String trimmed = normalizeWhitespace(raw);
+        if (isMissing(trimmed)){
+            return  null;
+        }
+        return titleCase(trimmed);
+    }
+
+    static String cleanSignalType(String raw){
+        String trimmed = normalizeWhitespace(raw);
+        if (isMissing(trimmed)){
+            return null;
+        }
+        return trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    static Boolean cleanActiveFlag(String raw){
+        String trimmed = normalizeWhitespace(raw);
+        if (isMissing(trimmed)){
+            return null;
+        }
+
+        String lower = trimmed.toLowerCase(Locale.ROOT);
+        if (TRUE_VALUES.contains(lower)){
+            return true;
+        }
+        if (FALSE_VALUES.contains(lower)){
+            return false;
+        }
+
+        // unexpected/unrecognised values, treat as missing
+        return null;
+    }
+
+    // --- duplicate handling ---
+
+    /**
+     * 2 rows normalised to the same ID.
+     * Prefer whichever side actually has a value for each field.
+     * if both sides disagree on a non-null value, keep the first-seen one and
+     * log is so conflict isn't silently swallowed
+     */
+    static Intersection mergeDuplicates(Intersection first, Intersection second){
+        String district = pickField(first.id(), "district", first.district(), second.district());
+        String signalType = pickField(first.id(), "signalType", first.signalType(), second.signalType());
+        Boolean active = pickField(first.id(), "active", first.active(), second.active());
+        return new Intersection(first.id(), district, signalType, active);
+    }
+
+    static <T> T pickField(String id, String fieldName, T existing, T incoming){
+        if (existing == null){
+            return incoming;
+        }
+        if (incoming == null){
+            return existing;
+        }
+        if (!existing.equals(incoming)){
+            System.err.printf("WARNING: duplicate record for %s has conflicting %s values (%s vs %s) - keping %s%n",
+                    id, fieldName, existing, incoming, existing);
+        }
+        return existing;
+
+        // --- small helpers ---
+        static boolean isMissing(String trimmed) {
+            return MISSING_PLACEHOLDERS.contains(trimmed.toLowerCase(Locale.ROOT));
+        }
+
+    }
+
+    // Trims
+    static String normalizeWhitespace(String raw){
+        if (raw == null){
+            return "";
+        }
+        return raw.trim().replace("\\s+", " ");
+    }
+
+    static String titleCase(String value){
+        StringBuilder result = new StringBuilder(value.length());
+        boolean capitalizeNext = true;
+        for (char c : value.toCharArray()){
+            if (Character.isWhitespace(c)){
+                capitalizeNext = true;
+                result.append(c);
+            }else if (capitalizeNext){
+                result.append(Character.toUpperCase(c));
+                capitalizeNext = false;
+            }else{
+                result.append(Character.toLowerCase(c));
+            }
+        }
+        return result.toString();
+    }
+
+
+
 
 
 }
