@@ -83,6 +83,7 @@ class IntersectionCleanerTest {
 
     @Nested
     class DuplicateHandling {
+
         @Test
         void missingValuesAreFilledFromDuplicateAndConflictsKeepFirstSeenValue() {
             Intersection first = new Intersection("INT-1007", "Eastside", null, true);
