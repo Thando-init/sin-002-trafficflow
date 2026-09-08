@@ -10,6 +10,8 @@ public final class MqConfig {
     public static final String BROKER_URL = "tcp://localhost:61616";
     public static final String TOPIC = "congestion-topic";
 
+    /** Documents the MqConfig operation and its effect on service state or external communication.
+     */
     private MqConfig() {
     }
 }
