@@ -11,6 +11,8 @@ public final class MqConfig {
     public static final String BROKER_URL = "tcp://localhost:61616";
     public static final String HEARTBEAT_QUEUE = "intersection-heartbeat-queue";
 
+    /** Documents the MqConfig operation and its effect on service state or external communication.
+     */
     private MqConfig() {
     }
 }
