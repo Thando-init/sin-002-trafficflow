@@ -88,16 +88,14 @@ mvn package
 java -jar target/ingestion-service.jar
 ```
 
-Listens on port `7020`. Currently just exposes `/health` — the actual CSV
-parsing/cleaning logic is a TODO.
+Listens on port `7020`. `GET /intersections` returns the cleaned, de-duplicated
+CSV records as JSON, while `GET /health` returns the service health check.
 
 ## Test
 
-No automated tests yet. Manually verify it's up:
+The cleaner is covered by JUnit 5 tests for normalization, explicit missing values,
+boolean handling, duplicate merges, and the supplied CSV. Run them with:
 
 ```
-curl http://localhost:7020/health   # -> OK
+mvn test
 ```
-
-To add real tests, add JUnit 5 + the Surefire plugin to `pom.xml`, put tests under
-`src/test/java/co/wethinkcode/trafficflow/`, and run `mvn test`.

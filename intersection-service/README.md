@@ -32,15 +32,20 @@ mvn package
 java -jar target/intersection-service.jar
 ```
 
-Listens on port `7021`.
+Listens on port `7021`. It loads canonical data from ingestion-service at startup and can reload it with `POST /intersections/refresh`. It publishes a heartbeat every five seconds by default; set `HEARTBEAT_INTERVAL_SECONDS` to override the interval.
+
+| Endpoint | Method | Behavior |
+|---|---|---|
+| `/health` | `GET` | Returns health and the current catalogue size. |
+| `/intersections` | `GET` | Returns the canonical intersection list. |
+| `/intersections/{id}` | `GET` | Looks up an intersection; returns `404` when unknown. |
+| `/districts/{district}` | `GET` | Returns matching intersections; returns `404` when unknown. |
+| `/intersections/refresh` | `POST` | Reloads canonical data from ingestion-service. |
 
 ## Test
 
-No automated tests yet. Manually verify it's up:
+Run the JUnit 5 catalogue tests with:
 
 ```
-curl http://localhost:7021/health   # -> OK
+mvn test
 ```
-
-To add real tests, add JUnit 5 + the Surefire plugin to `pom.xml`, put tests under
-`src/test/java/co/wethinkcode/trafficflow/`, and run `mvn test`.

@@ -103,21 +103,14 @@ find . -name pom.xml -execdir mvn -q package \;
 ## Run
 
 ```
-# ingestion
-cd ingestion-service && mvn package && java -jar target/ingestion-service.jar
-
-# domain services, each in its own terminal
-# terminal 1
-cd intersection-service && mvn package && java -jar target/intersection-service.jar
-# terminal 2
-cd congestion-service && mvn package && java -jar target/congestion-service.jar
-# terminal 3
-cd routing-service && mvn package && java -jar target/routing-service.jar
-
-# MQ broker (needed once the MQ-aware services above are wired up)
+# Start the ActiveMQ broker first (required by stages 3 and 4)
 cd common && docker compose up -d
 
-# alerting
+# Start the services in separate terminals, in this order
+cd ingestion-service && mvn package && java -jar target/ingestion-service.jar
+cd intersection-service && mvn package && java -jar target/intersection-service.jar
+cd congestion-service && mvn package && java -jar target/congestion-service.jar
+cd routing-service && mvn package && java -jar target/routing-service.jar
 cd intersection-watchdog && mvn package && java -jar target/intersection-watchdog.jar
 ```
 
@@ -131,33 +124,23 @@ cd intersection-watchdog && mvn package && java -jar target/intersection-watchdo
 
 ## Test
 
-No automated tests exist yet (this is a scaffold). Each running service exposes
-`/health`, so sanity-check manually:
+Each module has JUnit 5 unit tests. Run the complete suite from the project root:
 
 ```
-curl http://localhost:7020/health   # -> OK
+find . -name pom.xml -execdir mvn test \;
 ```
+For an HTTP smoke test after starting the services:
 
-To add real tests to a module, add JUnit 5 and Surefire to its `pom.xml`:
-
-```xml
-<dependency>
-  <groupId>org.junit.jupiter</groupId>
-  <artifactId>junit-jupiter</artifactId>
-  <version>5.10.2</version>
-  <scope>test</scope>
-</dependency>
 ```
-
-```xml
-<plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-surefire-plugin</artifactId>
-  <version>3.2.5</version>
-</plugin>
+curl http://localhost:7020/intersections
+curl http://localhost:7021/intersections/INT-1001
+curl -X PUT http://localhost:7022/congestion \
+  -H 'Content-Type: application/json' -d '{"level":4}'
+curl -X POST http://localhost:7023/routes/estimate \
+  -H 'Content-Type: application/json' \
+  -d '{"originId":"INT-1001","destinationId":"INT-1002","baseMinutes":10}'
+curl http://localhost:7024/alert
 ```
-
-then add tests under that module's `src/test/java/...` and run:
 
 ```
 mvn test

@@ -34,13 +34,16 @@ java -jar target/congestion-service.jar
 
 Listens on port `7022`.
 
+| Endpoint | Method | Behavior |
+|---|---|---|
+| `/health` | `GET` | Returns the service health check. |
+| `/congestion` | `GET` | Returns the current level as `{"level": <0-8>}`. |
+| `/congestion` | `PUT` | Accepts `{"level": <0-8>}`. A changed value is published to `congestion-topic`; invalid values return `400`. |
+
 ## Test
 
-No automated tests yet. Manually verify it's up:
+Run the JUnit 5 congestion-state tests with:
 
 ```
-curl http://localhost:7022/health   # -> OK
+mvn test
 ```
-
-To add real tests, add JUnit 5 + the Surefire plugin to `pom.xml`, put tests under
-`src/test/java/co/wethinkcode/trafficflow/`, and run `mvn test`.

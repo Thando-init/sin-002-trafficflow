@@ -32,15 +32,17 @@ mvn package
 java -jar target/intersection-watchdog.jar
 ```
 
-Listens on port `7024`.
+Listens on port `7024`. It observes the heartbeat queue and broker dead-letter queue, raises an alert after 15 seconds without a heartbeat by default, and clears the alert on recovery. Set `HEARTBEAT_TIMEOUT_SECONDS` to override the timeout.
+
+| Endpoint | Method | Behavior |
+|---|---|---|
+| `/health` | `GET` | Returns `200` while heartbeats are current, or `503` with alert details when the intersection service is unavailable. |
+| `/alert` | `GET` | Returns the current liveness state, last heartbeat timestamp, and alert details if present. |
 
 ## Test
 
-No automated tests yet. Manually verify it's up:
+Run the JUnit 5 watchdog-state tests with:
 
 ```
-curl http://localhost:7024/health   # -> OK
+mvn test
 ```
-
-To add real tests, add JUnit 5 + the Surefire plugin to `pom.xml`, put tests under
-`src/test/java/co/wethinkcode/trafficflow/`, and run `mvn test`.
