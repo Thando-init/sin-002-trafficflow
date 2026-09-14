@@ -28,8 +28,7 @@ cleanup through synchronous REST calls to asynchronous MQ decoupling and alertin
 Plus [`common/`](common) (no port) — the shared ActiveMQ broker and MQ config notes
 for `congestion-topic`: Routing Service becomes aware of congestion changes via an ActiveMQ Topic instead of querying Congestion Service directly.
 
-**Status:** Status: scaffold confirmed running — all 5 services build and respond OK on /health. No business logic implemented yet. 
-See NOTES.md for the build log.
+**Status:** All four stages are implemented. The services clean and share canonical intersection data, estimate routes from validated endpoints and congestion, distribute congestion changes through ActiveMQ, and surface intersection heartbeat alerts.
 
 ## Your task
 
@@ -102,6 +101,41 @@ find . -name pom.xml -execdir mvn -q package \;
 
 ## Run
 
+The repository includes a root [`Makefile`](Makefile) to reduce repeated commands. From the project root, use:
+
+```
+make help
+make test
+make package
+make verify
+```
+
+To use the Docker-based broker documented in `common/`:
+
+```
+make broker-start
+```
+
+Start each Java service in a separate terminal, in this order:
+
+```
+make run-ingestion
+make run-intersection
+make run-congestion
+make run-routing
+make run-watchdog
+```
+
+After all services are running, check their health endpoints with:
+
+```
+make health
+```
+
+The Makefile targets require GNU Make and are convenient in Git Bash, WSL, Linux, or macOS. On native Windows PowerShell, use the equivalent `mvn` and `java -jar` commands below. If you installed ActiveMQ Classic directly on Windows rather than using Docker, start it with `C:\Tools\apache-activemq-5.19.11\bin\activemq.bat start` instead of `make broker-start`.
+
+The equivalent manual workflow is:
+
 ```
 # Start the ActiveMQ broker first (required by stages 3 and 4)
 cd common && docker compose up -d
@@ -129,6 +163,7 @@ Each module has JUnit 5 unit tests. Run the complete suite from the project root
 ```
 find . -name pom.xml -execdir mvn test \;
 ```
+
 For an HTTP smoke test after starting the services:
 
 ```
@@ -140,8 +175,4 @@ curl -X POST http://localhost:7023/routes/estimate \
   -H 'Content-Type: application/json' \
   -d '{"originId":"INT-1001","destinationId":"INT-1002","baseMinutes":10}'
 curl http://localhost:7024/alert
-```
-
-```
-mvn test
 ```
