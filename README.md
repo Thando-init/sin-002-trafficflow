@@ -231,3 +231,6 @@ curl -X POST http://localhost:7023/routes/estimate \
   -d '{"originId":"INT-1001","destinationId":"INT-1002","baseMinutes":10}'
 curl http://localhost:7024/alert
 ```
+## Repository verification
+
+Verification code: `WTC-EBLW8GNR`
