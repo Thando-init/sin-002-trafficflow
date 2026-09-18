@@ -1,0 +1,47 @@
+sequenceDiagram
+    autonumber
+    actor Client
+    participant Routing as Routing Service :7023
+    participant Intersection as Intersection Service :7021
+    participant Congestion as Congestion Service :7022
+    participant Topic as ActiveMQ Topic<br/>congestion-topic
+    participant Broker as ActiveMQ Broker
+    participant Ingestion as Ingestion Service :7020
+    participant Watchdog as Intersection Watchdog :7024
+    participant Queue as ActiveMQ Queue<br/>intersection-heartbeat-queue
+
+    Note over Ingestion,Intersection: Service startup and catalogue loading
+    Intersection->>Ingestion: GET /intersections
+    Ingestion-->>Intersection: 200 OK + cleaned JSON catalogue
+    Intersection->>Queue: Publish heartbeat
+    Queue-->>Watchdog: Deliver heartbeat
+    Watchdog->>Watchdog: Record latest heartbeat time
+
+    Note over Client,Routing: Route estimation uses validated endpoints and cached congestion
+    Client->>Routing: POST /routes/estimate
+    Routing->>Intersection: GET /intersections/{originId}
+    Intersection-->>Routing: Intersection details or 404
+    Routing->>Intersection: GET /intersections/{destinationId}
+    Intersection-->>Routing: Intersection details or 404
+    Routing->>Routing: Read latest cached congestion level
+    Routing-->>Client: Route estimate or clear HTTP error
+
+    Note over Congestion,Routing: Congestion changes are broadcast asynchronously
+    Client->>Congestion: PUT /congestion {level}
+    Congestion->>Congestion: Validate and update level
+    Congestion->>Topic: Publish {level}
+    Topic->>Broker: Route event through ActiveMQ
+    Broker-->>Routing: Deliver congestion event
+    Routing->>Routing: Update in-memory congestion cache
+    Congestion-->>Client: Updated level and changed flag
+
+    Note over Queue,Watchdog: Watchdog detects missing or dead-lettered heartbeats
+    alt Heartbeat arrives on time
+        Queue-->>Watchdog: Heartbeat message
+        Watchdog->>Watchdog: Mark intersection service healthy
+    else Heartbeat is missed or dead-lettered
+        Queue-->>Watchdog: Timeout/dead-letter condition
+        Watchdog->>Watchdog: Create alert
+        Client->>Watchdog: GET /alert
+        Watchdog-->>Client: Current alert state
+    end
