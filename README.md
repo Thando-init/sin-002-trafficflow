@@ -80,6 +80,61 @@ trafficflow/
 └── intersection-watchdog/          (port 7024)
 ```
 
+## Architecture
+
+```mermaid
+flowchart LR
+    CSV[(intersections-legacy.csv)] --> ING[Ingestion Service  
+Port 7020]
+    ING --> INT[Intersection Service  
+Port 7021]
+    INT --> ROUTE[Routing Service  
+Port 7023]
+    CONG[Congestion Service  
+Port 7022] --> ROUTE
+
+    CONG --> TOPIC{{ActiveMQ Topic  
+congestion-topic}}
+    TOPIC --> ROUTE
+
+    INT --> QUEUE{{ActiveMQ Queue  
+intersection-heartbeat-queue}}
+    QUEUE --> WD[Intersection Watchdog  
+Port 7024]
+```
+
+```mermaid
+
+flowchart LR
+    CSV[(intersections-legacy.csv)] --> ING[Ingestion Service\n:7020\nclean + expose JSON]
+
+    ING --> INT[Intersection Service\n:7021\ncanonical catalogue\nREST validation]
+
+    INT -->|REST intersection lookup| ROUTE[Routing Service\n:7023\nroute estimation]
+    CONG[Congestion Service\n:7022\nlevel 0-8] -->|PUT /congestion| ROUTE
+
+    CONG -->|publish JSON update| TOPIC{{ActiveMQ Topic\ncongestion-topic}}
+    TOPIC -->|subscribe + cache latest level| ROUTE
+
+    INT -->|heartbeat every ~5 seconds| QUEUE{{ActiveMQ Queue\nintersection-heartbeat-queue}}
+    QUEUE -->|consume + monitor timeout/dead letter| WD[Intersection Watchdog\n:7024]
+
+    ROUTE --> CLIENT((REST Client))
+    WD --> ALERT((GET /alert))
+
+    classDef service fill:#1f4e79,color:#fff,stroke:#163a5c,stroke-width:2px;
+    classDef broker fill:#9e480e,color:#fff,stroke:#6e320a,stroke-width:2px;
+    classDef data fill:#548235,color:#fff,stroke:#385723,stroke-width:2px;
+
+    class ING,INT,CONG,ROUTE,WD service;
+    class TOPIC,QUEUE broker;
+    class CSV,CLIENT,ALERT data;
+
+
+
+```
+
+
 ## Build
 
 Requirements: Java 17+, Maven 3.8+, Docker (for the broker in `common/`).
